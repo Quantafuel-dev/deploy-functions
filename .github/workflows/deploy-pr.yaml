@@ -9,6 +9,7 @@ jobs:
       matrix:
         function:
           - Test_function
+
     steps:
       - uses: actions/checkout@v2
 
