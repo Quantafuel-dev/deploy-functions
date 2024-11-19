@@ -28,7 +28,7 @@ jobs:
       - uses: actions/checkout@v4
         if: ${{ contains(needs.generate-matrix.outputs.deploy_folders, matrix.function) }}
         with:  # we deploy based on a diff vs. prev commit, thus we need history:
-          fetch-depth: 0
+          fetch-depth: 1
 
       - name: Extract branch name
         if: ${{ contains(needs.generate-matrix.outputs.deploy_folders, matrix.function) }}
