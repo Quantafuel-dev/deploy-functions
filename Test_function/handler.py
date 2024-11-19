@@ -10,6 +10,7 @@ def handle(data, client):
 
     data["sum"] = sum_integers(data["a"], data["b"])
 
+    print("Hello world")
     print("Will now return updated data")
 
     return data
