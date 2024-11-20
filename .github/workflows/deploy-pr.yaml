@@ -9,6 +9,7 @@ jobs:
       matrix:
         function:
           - Test_function
+          - Skive_spot_price
     steps:
       - uses: actions/checkout@v2
 
