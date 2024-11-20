@@ -10,6 +10,6 @@ env_vars: {"COGNITE_BASE_URL": "https://api.cognitedata.com",
   "COGNITE_TOKEN_URL": "https://login.microsoftonline.com/92bce3bb-abfb-484b-b074-32e1a37f3631/oauth2/v2.0/token",
   }
 data_set_id: 3724274771595578
-cfd_cluster: api
+cdf_cluster: api
 cdf_project: quantafuel-test
 tenant_id: 92bce3bb-abfb-484b-b074-32e1a37f3631
