@@ -8,7 +8,7 @@ jobs:
   generate-matrix:
     uses: "./.github/workflows/generate-matrix.yaml"
     with:
-      deploy_folders: "Test_function"
+      deploy_folders: "Test_function, Skive_spot_price"
       trigger_deploy_all_folders: "common, .github"
   deploy:
     needs: generate-matrix
