@@ -8,9 +8,7 @@ jobs:
     strategy:
       matrix:
         function:
-
           - Test_function
-          - New_function
           - Test_function_Sebastien
 
     steps:
