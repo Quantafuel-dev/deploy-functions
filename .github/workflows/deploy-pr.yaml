@@ -10,7 +10,6 @@ jobs:
         function:
 
           - Test_function
-          - Skive_spot_price
           - New_function
           - Test_function_Sebastien
 
