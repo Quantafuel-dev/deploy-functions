@@ -8,8 +8,7 @@ jobs:
     strategy:
       matrix:
         function:
-          - Test_function
-          - Skive_spot_price
+          - Test_function_Sebastien
     steps:
       - uses: actions/checkout@v2
 
