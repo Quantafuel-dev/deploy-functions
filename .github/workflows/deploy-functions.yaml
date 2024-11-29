@@ -10,6 +10,7 @@ jobs:
     with:
       deploy_folders: "Test_function, Skive_spot_price, New_function"
       trigger_deploy_all_folders: "common, .github"
+
   deploy:
     needs: generate-matrix
     name: Deploy to Cognite Functions
