@@ -11,7 +11,7 @@ jobs:
 
           - Test_function
           - New_function
-          - Test_function_Sebastien
+          - Test_function_George
 
     steps:
       - uses: actions/checkout@v2
