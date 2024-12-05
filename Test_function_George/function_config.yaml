@@ -1,0 +1,15 @@
+# Note: Parameters can be hardcoded directly in '.github/workflows/deploy-functions.yaml'
+# if you do not need to vary them between your functions!
+common_folder: common
+description: "Test function deployed from github"
+owner: Quantafuel
+cpu: 1.0
+memory: 1.0
+env_vars: {"COGNITE_BASE_URL": "https://api.cognitedata.com",
+  "COGNITE_PROJECT": "quantafuel-test",
+  "COGNITE_TOKEN_URL": "https://login.microsoftonline.com/92bce3bb-abfb-484b-b074-32e1a37f3631/oauth2/v2.0/token",
+  }
+data_set_id: 3724274771595578
+cfd_cluster: api
+cdf_project: quantafuel-test
+tenant_id: 92bce3bb-abfb-484b-b074-32e1a37f3631
