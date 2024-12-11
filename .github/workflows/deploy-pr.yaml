@@ -10,6 +10,7 @@ jobs:
         function:
           - Test_function
           - Test_function_Sebastien
+          - Skive_Event_Creator_for_Production_Report
 
     steps:
       - uses: actions/checkout@v2
