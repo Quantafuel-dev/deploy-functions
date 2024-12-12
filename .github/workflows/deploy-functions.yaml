@@ -23,7 +23,6 @@ jobs:
         environment:
           - test
           - prod
-
     environment: ${{ matrix.environment }}
 
     steps:
