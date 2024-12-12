@@ -9,7 +9,6 @@ jobs:
     uses: "./.github/workflows/generate-matrix.yaml"
     with:
       deploy_folders: "Test_function, Skive_Event_Creator_for_Production_Report"
-
       trigger_deploy_all_folders: "common, .github"
 
   deploy:
