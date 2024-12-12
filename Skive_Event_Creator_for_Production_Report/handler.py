@@ -228,167 +228,11 @@ def handle(client):
         + sepoil2_dp
     )
 
-    # %% Events
-    line1_event = Event(
-        external_id="line1-" + str(uuid.uuid4()),
-        data_set_id=2793210906604821,
-        start_time=int(lastday_end.timestamp() * 1000),
-        type="Process",
-        subtype="line1_raw",
-        description="Calculation of last days production data, based on counter data",
-        metadata=(
-            {
-                "Day": lastday_end.weekday(),
-                "Week": week,
-                "Operating_hours": math.floor(line1 * 10) / 10,
-                "Plastic_infeed": math.floor(line1_feed),
-                "NG_to_burner": math.floor(ng_line1),
-                "NCG_to_burner": math.floor(ncg_line1),
-                "Oil_from_flash_tank": math.floor(flashtank1_dp),
-                "Oil_from_CMx01_to_holding_tank": math.floor(cm101_dp),
-                "Oil_from_CMx01_to_CM9x2": math.floor(cm101_wax),
-                "Oil_reinjected_to_reactor": math.floor(cm922_line1),
-                "verified": "False",
-            }
-        ),
-    )
-
-    line2_event = Event(
-        external_id="line2-" + str(uuid.uuid4()),
-        data_set_id=2793210906604821,
-        start_time=int(lastday_end.timestamp() * 1000),
-        type="Process",
-        subtype="line2_raw",
-        description="Calculation of last days production data, based on counter data",
-        metadata=(
-            {
-                "Day": lastday_end.weekday(),
-                "Week": week,
-                "Operating_hours": math.floor(line2 * 10) / 10,
-                "Plastic_infeed": math.floor(line2_feed),
-                "NG_to_burner": math.floor(ng_line2),
-                "NCG_to_burner": math.floor(ncg_line2),
-                "Oil_from_flash_tank": math.floor(flashtank2_dp),
-                "Oil_from_CMx01_to_holding_tank": math.floor(cm201_dp),
-                "Oil_from_CMx01_to_CM9x2": math.floor(cm201_wax),
-                "Oil_reinjected_to_reactor": math.floor(cm922_line2),
-                "verified": "False",
-            }
-        ),
-    )
-
-    line3_event = Event(
-        external_id="line3-" + str(uuid.uuid4()),
-        data_set_id=2793210906604821,
-        start_time=int(lastday_end.timestamp() * 1000),
-        type="Process",
-        subtype="line3_raw",
-        description="Calculation of last days production data, based on counter data",
-        metadata=(
-            {
-                "Day": lastday_end.weekday(),
-                "Week": week,
-                "Operating_hours": math.floor(line3 * 10) / 10,
-                "Plastic_infeed": math.floor(line3_feed),
-                "NG_to_burner": math.floor(ng_line3),
-                "NCG_to_burner": math.floor(ncg_line3),
-                "Oil_from_flash_tank": math.floor(flashtank3_dp),
-                "Oil_from_CMx01_to_holding_tank": math.floor(cm301_dp),
-                "Oil_from_CMx01_to_CM9x2": math.floor(cm301_wax),
-                "Oil_reinjected_to_reactor": math.floor(cm972_line3),
-                "verified": "False",
-            }
-        ),
-    )
-
-    line4_event = Event(
-        external_id="line4-" + str(uuid.uuid4()),
-        data_set_id=2793210906604821,
-        start_time=int(lastday_end.timestamp() * 1000),
-        type="Process",
-        subtype="line4_raw",
-        description="Calculation of last days production data, based on counter data",
-        metadata=(
-            {
-                "Day": lastday_end.weekday(),
-                "Week": week,
-                "Operating_hours": math.floor(line4 * 10) / 10,
-                "Plastic_infeed": math.floor(line4_feed),
-                "NG_to_burner": math.floor(ng_line4),
-                "NCG_to_burner": math.floor(ncg_line4),
-                "Oil_from_flash_tank": math.floor(flashtank4_dp),
-                "Oil_from_CMx01_to_holding_tank": math.floor(cm401_dp),
-                "Oil_from_CMx01_to_CM9x2": math.floor(cm401_wax),
-                "Oil_reinjected_to_reactor": math.floor(cm972_line4),
-                "verified": "False",
-            }
-        ),
-    )
-
-    module_event = Event(
-        external_id="module-" + str(uuid.uuid4()),
-        data_set_id=2793210906604821,
-        start_time=int(lastday_end.timestamp() * 1000),
-        type="Process",
-        subtype="module_raw",
-        description="Calculation of last days production data, based on counter data",
-        metadata=(
-            {
-                "Day": lastday_end.weekday(),
-                "Week": week,
-                "Oil_from_separator_1": math.floor(sepoil1_dp),
-                "Water_from_separator_1": math.floor(sepwater1_dp),
-                "Oil_from_separator_2": math.floor(sepoil2_dp),
-                "Water_from_separator_2": math.floor(sepwater2_dp),
-                "Oil_from_waxtank_module1": math.floor(cm922_dp),
-                "Oil_from_waxtank_module2": math.floor(cm972_dp),
-                "verified": "False",
-            }
-        ),
-    )
-
-    common_event = Event(
-        external_id="common-" + str(uuid.uuid4()),
-        data_set_id=2793210906604821,
-        start_time=int(lastday_end.timestamp() * 1000),
-        type="Process",
-        subtype="common_raw",
-        description="Calculation of last days production data, based on counter data",
-        metadata=(
-            {
-                "Day": lastday_end.weekday(),
-                "Week": week,
-                "Manual_drain": 0,
-                "Plastic_feed_to_shredder": math.floor(plastic_to_shredder_daily),
-                "Drain_NCG_buffer_tank": math.floor(ncg_drain),
-                "NG_to_flare": math.floor(ng_flare),
-                "NCG_to_flare": math.floor(ncg_flare),
-                "NCG_total": math.floor(ncg_flare + ncg_line1 + ncg_line2 + ncg_line3 + ncg_line4),
-                "Ash": 0,
-                "Oil_to_holding_tank_total": math.floor(total_oil_HT),
-                "Feed_to_column": math.floor(sulzer_feed_column),
-                "Gas_to_flare": math.floor(gas_to_flare_calc),
-                "Light_fraction_from_EP04": math.floor(sulzer_ep04_column),
-                "Light_fraction_from_EP08": math.floor(sulzer_ep08_column),
-                "Middle_fraction_EP05": math.floor(sulzer_ep05_column),
-                "Heavy_fraction_EP06": math.floor(sulzer_ep06_column),
-                "verified": "False",
-            }
-        ),
-    )
-
-    client.events.create(line1_event)
-    client.events.create(line2_event)
-    client.events.create(line3_event)
-    client.events.create(line4_event)
-    client.events.create(module_event)
-    client.events.create(common_event)
-
     # %% One event for all
     data_event = Event(
         external_id="skive_daily_production_numbers" + str(uuid.uuid4()),
         data_set_id=6509329789873439,
-        start_time=int(lastday_end.timestamp() * 1000),
+        start_time=int(yesterday_end.timestamp() * 1000),
         type="Process",
         subtype="raw",
         description="Calculation of last days production data, based on counter data",
@@ -448,7 +292,6 @@ def handle(client):
                 "Light_fraction_from_EP08": math.floor(sulzer_ep08_column),
                 "Middle_fraction_EP05": math.floor(sulzer_ep05_column),
                 "Heavy_fraction_EP06": math.floor(sulzer_ep06_column),
-                "verified": "False",
             }
         ),
     )
