@@ -12,6 +12,7 @@ def handle(client):
 
     from datetime import datetime, time, timedelta, timezone
     from zoneinfo import ZoneInfo
+
     from cognite.client.data_classes import Event
 
     data = {
