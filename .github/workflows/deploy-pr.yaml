@@ -36,7 +36,8 @@ jobs:
         with:
           path: .venv
           key: venv-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}-${{ hashFiles('.github/workflows/deploy-pr.yaml') }}
-
+      - name: Install requests
+        run: pip install types-requests
       - name: Install dependencies using poetry (skipped on cache hit)
         run: poetry install
         if: steps.cached-poetry-venv.outputs.cache-hit != 'true'
