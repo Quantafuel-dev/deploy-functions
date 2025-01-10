@@ -16,11 +16,9 @@ def handle(client):
 
     from datetime import datetime, time, timedelta, timezone
     from zoneinfo import ZoneInfo
-
     import pandas as pd
     import requests
 
-    # from cog_client import client
     from cognite.client.data_classes import Event
 
     # type: ignore
@@ -653,6 +651,7 @@ def handle(client):
         + ncg_drain
     )
 
+
     # %% Ratio calculations
     manual_drain_ratio = manual_drain * 0.8 / (plastic_to_shredder_daily - sepwater1_dp - sepwater2_dp)
     ncg_drain_ratio = ncg_drain / (plastic_to_shredder_daily - sepwater1_dp - sepwater2_dp)
@@ -664,6 +663,7 @@ def handle(client):
 
     # %% Ash calculation
     ash = (plastic_to_shredder_daily - sepwater1_dp - sepwater2_dp) * ash_ratio
+
     # %% One event for all
     data_event = Event(
         external_id="skive_daily_production_numbers" + str(uuid.uuid4()),
