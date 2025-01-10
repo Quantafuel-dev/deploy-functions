@@ -5,15 +5,418 @@ Created on Tue Nov 26 10:04:53 2024
 @author: Espen.Nordsveen
 """
 
+# from cog_client import client
+
 
 def handle(client):
+
     import math
+    import os
     import uuid
 
     from datetime import datetime, time, timedelta, timezone
     from zoneinfo import ZoneInfo
 
+    import pandas as pd
+    import requests
+
+    # from cog_client import client
     from cognite.client.data_classes import Event
+
+    # type: ignore
+    # from dotenv import load_dotenv
+    # load_dotenv()
+    # CLIENT_ID = os.getenv("CLIENT_ID")
+    # CLIENT_SECRET = os.getenv("CLIENT_SECRET")
+
+    CLIENT_ID = os.getenv("sharepoint_client_id")
+    CLIENT_SECRET = os.getenv("sharepoint_client_secret")
+
+    # %%
+    class DrainData:
+        """
+        A class to represent drain rounds in Skive. The class fetches data from Sharepoint lists in the Viridor domain
+
+        ...
+
+        Attributes
+        ----------
+        site_name : str
+            the name of the sharepoint site to fetch data from
+
+        Methods
+        -------
+        get_access_token(cls):
+            Class method. Returns the access_token
+
+        get_site_id(cls, site_name)
+            Class method. Returns the site id for the given site_name
+
+
+        """
+
+        access_token = None
+
+        # OAuth 2.0 token endpoint
+        token_url = "https://login.microsoftonline.com/92bce3bb-abfb-484b-b074-32e1a37f3631/oauth2/v2.0/token"
+
+        # Request payload
+        payload = {
+            "grant_type": "client_credentials",  # Use "authorization_code" if using user-delegated permissions
+            "client_id": CLIENT_ID,
+            "client_secret": CLIENT_SECRET,
+            "scope": "https://graph.microsoft.com/.default",  # Use ".default" for application permissions
+        }
+
+        # Class method to obtain the access token
+        @classmethod
+        def get_access_token(cls):
+            """
+            Obtains the access token from sharepoint with the given CLIENT_ID and CLIENT_SECRET for the app registration in Azure,
+            set up for sharepoint access to Viridor domain. CLIENT_ID and CLIENT_SECRET is stored in a .env file. Obtains a token
+            valid globally inside the class instance
+
+            Returns
+            -------
+            str
+                DESCRIPTION.
+
+            """
+            if cls.access_token is None:
+                # Make the POST request
+                response = requests.post(cls.token_url, data=cls.payload)
+
+                # Handle the response
+                if response.status_code == 200:
+                    cls.access_token = response.json().get("access_token")
+
+                    # print("Access Token:", access_token)
+                else:
+                    print(f"Failed to obtain token: {response.status_code}, {response.text}")
+            return cls.access_token
+
+        @classmethod
+        def get_site_id(cls, site_name):
+
+            access_token = cls.get_access_token()
+
+            hostname = "viridor.sharepoint.com"
+
+            # API endpoint
+            url = f"https://graph.microsoft.com/v1.0/sites/{hostname}:/sites/{site_name}"
+
+            # Make the request
+            headers = {
+                "Authorization": f"Bearer {access_token}",
+            }
+
+            response = requests.get(url, headers=headers)
+
+            if response.status_code == 200:
+                site_id = response.json().get("id")
+                # print("Site ID:", site_id)
+                if not site_id:
+                    raise Exception("Site ID not found in the response.")
+                return site_id
+            else:
+                raise Exception(f"Failed to retrieve site ID: {response.status_code}, {response.text}")
+
+        def __init__(self, site_name):
+            """
+            Construct all the necessary attributes for the DrainData object
+
+            Parameters
+            ----------
+            site_name : str
+                name of the sharepoint site to fetch data from
+
+            Returns
+            -------
+            None.
+
+            """
+            self.access_token = DrainData.get_access_token()
+            self.site_id = DrainData.get_site_id(site_name)
+            self.site_name = site_name
+            print(f"Initialized DrainData with Site name {site_name} and Site ID: {self.site_id}")
+
+        def get_lists_id(self):
+            url = f"http://graph.microsoft.com/v1.0/sites/{self.site_id}/lists"
+            headers = {"Authorization": f"Bearer {self.access_token}"}
+            response = requests.get(url, headers=headers)
+
+            if response.status_code == 200:
+                lists = response.json()
+                print("Lists fetched successfully")
+                # print(json.dumps(lists, indent=4))
+            else:
+                raise Exception(f"Error: {response.status_code}, {response.text}")
+
+            return lists
+
+        def get_list_data(self, lists, list_name):
+            """
+
+
+            Parameters
+            ----------
+            lists : DICT
+                Structured dict containing all lists for the given site name.
+            list_name : STRING
+                The name of the list to fetch data from.
+
+            Returns
+            -------
+            LIST
+                Returns list of data from the given list name
+
+            """
+            headers = {"Authorization": f"Bearer {self.access_token}"}
+
+            list_dict = {item.get("name"): item.get("id") for item in lists.get("value")}
+            list_id = list_dict.get(list_name)
+            # print(list_id)
+            # site_id = "your-sharepoint-site-id"
+            url = f"https://graph.microsoft.com/v1.0/sites/{self.site_id}/lists/{list_id}/items?expand=fields"
+            response_list = requests.get(url, headers=headers)
+            # print(response_list)
+            if response_list.status_code == 200:
+                response_json = response_list.json()
+                # print(json.dumps(response_json, indent=4))
+            else:
+                print(f"Failed to fetch lists: {response_list.status_code}, {response_list.text}")
+
+            return response_json.get("value")
+
+        def create_12h_drain_df(self, list_12hours):
+            """
+
+
+            Parameters
+            ----------
+            list_12hours : list
+                List data for 12 hours drain, fetched using get_list_data()
+
+            Returns
+            -------
+            drain_df : DataFrame
+                Returns a dataframe of all drain volumes from the 12 hours drain round with valve tag number as the column header name.
+
+            """
+
+            data = []
+            for entry in list_12hours:
+                data.append(
+                    {
+                        "Date": entry.get("fields").get("field_1"),
+                        "P03_QJB_QM005": entry.get("fields").get("field_2"),
+                        "P04_QJB_QM006": entry.get("fields").get("field_3"),
+                        "P02_QJB_QM006": entry.get("fields").get("field_4"),
+                        "P01_QJB_QM005": entry.get("fields").get("field_5"),
+                        "P10_QJB_QM149": entry.get("fields").get("field_6"),
+                        "P10_QEB_QM033": entry.get("fields").get("field_7"),
+                    }
+                )
+
+            drain_df = pd.DataFrame(data)
+            drain_df["Date"] = pd.to_datetime(drain_df["Date"])
+            drain_df.set_index("Date", inplace=True)
+            drain_df.fillna(0, inplace=True)
+            # drain_df["Sum"] = drain_df.sum(axis=1)
+            return drain_df
+
+        def create_24h_drain_df(self, list_24hours, list_name):
+            """
+
+
+            Parameters
+            ----------
+            list_24hours : list
+                List data for 24 hours drain, fetched using get_list_data()
+            list_name : str
+                DESCRIPTION.
+
+            Returns
+            -------
+            drain_df : TYPE
+                DESCRIPTION.
+
+            """
+            # list_dict = {item.get("name"): item.get("id") for item in lists.get("value")}
+            # list_id = list_dict.get(list_name)
+
+            # headers = {"Authorization": f"Bearer {self.access_token}"}
+
+            # url = f"https://graph.microsoft.com/v1.0/sites/{self.site_id}/lists/{list_id}/items?expand=fields"
+            # response_list = requests.get(url, headers=headers)
+
+            # if response_list.status_code == 200:
+            #     response_json = response_list.json()
+            #     # print(json.dumps(response_json, indent=4))
+            # else:
+            #     print(f"Failed to fetch lists: {response_list.status_code}, {response_list.text}")
+
+            data = []
+            for entry in list_24hours:
+                data.append(
+                    {
+                        "Date": entry.get("fields").get("field_1"),
+                        "P10_QJB_QM150": entry.get("fields").get("field_2"),
+                        "P10_EKG_QM039": entry.get("fields").get("field_3"),
+                        "P10_QJB_QM148": entry.get("fields").get("field_4"),
+                        "P10_EGG_QM139": entry.get("fields").get("field_5"),
+                        "P10_EKG_QM031": entry.get("fields").get("field_6"),
+                        "P10_GAD_QM007": entry.get("fields").get("field_7"),
+                        "P10_GNK_QM729": entry.get("fields").get("field_8"),
+                        # "P10_EKG_GP001": entry.get("fields").get("field_7"),
+                    }
+                )
+
+            drain_df = pd.DataFrame(data)
+            drain_df["Date"] = pd.to_datetime(drain_df["Date"])
+            drain_df.set_index("Date", inplace=True)
+            drain_df.fillna(0, inplace=True)
+            # drain_df["Sum"] = drain_df.sum(axis=1)
+            return drain_df
+
+        def single_drain_dp_12h_total(self, drain_list, year, month, day):
+            """
+
+
+            Parameters
+            ----------
+            drain_list : LIST
+                List of drain data for 12h days drain round.
+            year : datetime.year
+                Input year of interest.
+            month : datetime.month
+                Input month of interest.
+            day : datetime.day
+                Input day of interest.
+
+            Returns
+            -------
+            Returns the total sum of drain volumes for the given date
+
+            """
+
+            drain_sum = 0
+            for item in drain_list:
+                date = datetime.strptime(item.get("fields").get("field_1"), "%Y-%m-%dT%H:%M:%SZ")
+                # print(datetime.strptime(item.get("fields").get("field_1"), "%Y-%m-%dT%H:%M:%SZ"))
+                # print(date.day, date.month, date.year, ":", day, month, year)
+                if date.day == day and date.month == month and date.year == year:
+                    print(item.get("eTag"))
+                    drain_sum += (
+                        item.get("fields").get("field_2")
+                        + item.get("fields").get("field_3")
+                        + item.get("fields").get("field_4")
+                        + item.get("fields").get("field_5")
+                        + item.get("fields").get("field_6")
+                        + item.get("fields").get("field_7")
+                    )
+
+            return drain_sum
+
+        def single_drain_dp_24h_total(self, drain_list, year, month, day):
+            """
+
+
+            Parameters
+            ----------
+            drain_list : LIST
+                List of drain data for 24 hours drain round.
+            year : datetime.year
+                Input year of interest.
+            month : datetime.month
+                Input month of interest.
+            day : datetime.day
+                Input day of interest.
+
+            Returns
+            -------
+            Returns the total sum of drain volumes for the given date
+
+            """
+
+            drain_sum = 0
+            for item in drain_list:
+                date = datetime.strptime(item.get("fields").get("field_1"), "%Y-%m-%dT%H:%M:%SZ")
+                # print(datetime.strptime(item.get("fields").get("field_1"), "%Y-%m-%dT%H:%M:%SZ"))
+                if date.day == day and date.month == month and date.year == year:
+                    print(item.get("eTag"))
+                    drain_sum += (
+                        item.get("fields").get("field_2")
+                        + item.get("fields").get("field_3")
+                        + item.get("fields").get("field_4")
+                        + item.get("fields").get("field_5")
+                        + item.get("fields").get("field_6")
+                        + item.get("fields").get("field_7")
+                        + item.get("fields").get("field_8")
+                    )
+
+            return drain_sum
+
+        def single_drain_dp_7d_total(self, drain_list, year, month, day):
+            """
+
+
+            Parameters
+            ----------
+            drain_list : LIST
+                List of drain data for 7 days drain round.
+            year : datetime.year
+                Input year of interest.
+            month : datetime.month
+                Input month of interest.
+            day : datetime.day
+                Input day of interest.
+
+            Returns
+            -------
+            Returns the total sum of drain volumes for the given date
+
+            """
+            drain_sum = 0
+            for item in drain_list:
+                date = datetime.strptime(item.get("fields").get("field_1"), "%Y-%m-%dT%H:%M:%SZ")
+                # print(datetime.strptime(item.get("fields").get("field_1"), "%Y-%m-%dT%H:%M:%SZ"))
+                if date.day == day and date.month == month and date.year == year:
+                    drain_sum += (
+                        item.get("fields").get("field_2")
+                        + item.get("fields").get("field_3")
+                        + item.get("fields").get("field_4")
+                        + item.get("fields").get("field_5")
+                        + item.get("fields").get("field_6")
+                        + item.get("fields").get("field_7")
+                        + item.get("fields").get("field_8")
+                        + item.get("fields").get("field_9")
+                        + item.get("fields").get("field_10")
+                        + item.get("fields").get("field_11")
+                        + item.get("fields").get("field_12")
+                        + item.get("fields").get("field_13")
+                        + item.get("fields").get("field_14")
+                        + item.get("fields").get("field_15")
+                        + item.get("fields").get("field_16")
+                        + item.get("fields").get("field_17")
+                        + item.get("fields").get("field_18")
+                        + item.get("fields").get("field_19")
+                        + item.get("fields").get("field_20")
+                        + item.get("fields").get("field_21")
+                        + item.get("fields").get("field_22")
+                        + item.get("fields").get("field_23")
+                        + item.get("fields").get("field_24")
+                        + item.get("fields").get("field_25")
+                        + item.get("fields").get("field_26")
+                        + item.get("fields").get("field_27")
+                        + item.get("fields").get("field_28")
+                        + item.get("fields").get("field_29")
+                        + item.get("fields").get("field_30")
+                        + item.get("fields").get("field_31")
+                        + item.get("fields").get("field_32")
+                    )
+
+            return drain_sum
 
     data = {
         "prodhours1": ["2s=L1_PRODUCTION_HOURS:Q_TT"],
@@ -126,6 +529,25 @@ def handle(client):
 
     dk_tz = ZoneInfo("Europe/Oslo")
 
+    # %% Manual drain
+    drains = DrainData("S-Skive470")
+
+    lists = drains.get_lists_id()
+    list_12h = drains.get_list_data(lists, "DrainLog_12hr")
+    list_24h = drains.get_list_data(lists, "DrainLog_24hr")
+    list_7d = drains.get_list_data(lists, "DrainLog_7d")
+    total_drain_12h = drains.single_drain_dp_12h_total(
+        list_12h, yesterday_end.year, yesterday_end.month, yesterday_end.day
+    )
+    total_drain_24h = drains.single_drain_dp_24h_total(
+        list_24h, yesterday_end.year, yesterday_end.month, yesterday_end.day
+    )
+    total_drain_7d = drains.single_drain_dp_7d_total(
+        list_7d, yesterday_end.year, yesterday_end.month, yesterday_end.day
+    )
+
+    manual_drain = total_drain_12h + total_drain_24h + total_drain_7d
+
     # %% Plastic feed
     line1_feed = lastDayCounterValue(data["plastfeed1"], yesterday_end)
     line2_feed = lastDayCounterValue(data["plastfeed2"], yesterday_end)
@@ -226,8 +648,22 @@ def handle(client):
         + cm401_dp
         + sepoil1_dp
         + sepoil2_dp
+        + cm922_dp
+        + cm972_dp
+        + ncg_drain
     )
 
+    # %% Ratio calculations
+    manual_drain_ratio = manual_drain * 0.8 / (plastic_to_shredder_daily - sepwater1_dp - sepwater2_dp)
+    ncg_drain_ratio = ncg_drain / (plastic_to_shredder_daily - sepwater1_dp - sepwater2_dp)
+    ncg_total_ratio = (ncg_flare + ncg_line1 + ncg_line2 + ncg_line3 + ncg_line4) / (
+        plastic_to_shredder_daily - sepwater1_dp - sepwater2_dp
+    )
+    oil_to_ht_ratio = total_oil_HT / (plastic_to_shredder_daily - sepwater1_dp - sepwater2_dp)
+    ash_ratio = 1 - manual_drain_ratio - ncg_drain_ratio - ncg_total_ratio - oil_to_ht_ratio
+
+    # %% Ash calculation
+    ash = (plastic_to_shredder_daily - sepwater1_dp - sepwater2_dp) * ash_ratio
     # %% One event for all
     data_event = Event(
         external_id="skive_daily_production_numbers" + str(uuid.uuid4()),
@@ -278,13 +714,13 @@ def handle(client):
                 "Water_from_separator_2": math.floor(sepwater2_dp),
                 "Oil_from_waxtank_module1": math.floor(cm922_dp),
                 "Oil_from_waxtank_module2": math.floor(cm972_dp),
-                "Manual_drain": 0,
+                "Manual_drain": manual_drain,
                 "Plastic_feed_to_shredder": math.floor(plastic_to_shredder_daily),
                 "Drain_NCG_buffer_tank": math.floor(ncg_drain),
                 "NG_to_flare": math.floor(ng_flare),
                 "NCG_to_flare": math.floor(ncg_flare),
                 "NCG_total": math.floor(ncg_flare + ncg_line1 + ncg_line2 + ncg_line3 + ncg_line4),
-                "Ash": 0,
+                "Ash": math.floor(ash),
                 "Oil_to_holding_tank_total": math.floor(total_oil_HT),
                 "Feed_to_column": math.floor(sulzer_feed_column),
                 "Gas_to_flare": math.floor(gas_to_flare_calc),
@@ -296,3 +732,20 @@ def handle(client):
         ),
     )
     client.events.create(data_event)
+
+
+# function_xid = "Skive_weekly_report_KPIs"
+# function_name = "Skive weekly report KPIs"
+
+# try:
+#     client.functions.delete(external_id = function_xid)
+#     print("Function deleted")
+# except Exception:
+#     print("No function to delete")
+
+# func = client.functions.create(
+#     external_id = function_xid,
+#     name = function_name,
+#     function_handle = handle)
+
+# print("Function created")
