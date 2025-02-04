@@ -1,0 +1,4 @@
+- name: Test schedule
+  cron: "0 0 * * *"
+  data:
+    key: value
