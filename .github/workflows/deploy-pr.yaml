@@ -8,7 +8,7 @@ jobs:
     strategy:
       matrix:
         function:
-          - Skive_Event_Creator_for_Production_Report
+          - Test_function_George
 
     steps:
       - uses: actions/checkout@v2
