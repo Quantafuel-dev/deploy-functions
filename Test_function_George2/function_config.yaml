@@ -1,7 +1,7 @@
 # Note: Parameters can be hardcoded directly in '.github/workflows/deploy-functions.yaml'
 # if you do not need to vary them between your functions!
 common_folder: common
-description: "George2 new function deployed from GitHub"
+description: "Georges third test function deployed from github"
 owner: Quantafuel
 cpu: 1.0
 memory: 1.0
