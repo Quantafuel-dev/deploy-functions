@@ -8,7 +8,7 @@ jobs:
     strategy:
       matrix:
         function:
-          - Test_function_George
+          - Test_function_George2
     steps:
       - uses: actions/checkout@v2
 
