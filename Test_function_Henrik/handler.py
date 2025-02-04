@@ -6,14 +6,6 @@ Created on Tue Feb  4 12:52:49 2025
 """
 
 
-def handle(data, client):
-    print("I got the following data:")
-    print(data)
+def handle(client):
 
-    if not ("a" in data and "b" in data):
-        raise KeyError("Data should contain both keys: 'a' and 'b'")
-
-    print("Hello world")
-    print("Will now return updated data")
-
-    return data
+    print("Hello henr")
